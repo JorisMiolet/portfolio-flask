@@ -61,13 +61,15 @@
           <div class="row">
             <div class="col-md-10 col-md-offset-1">
               <div class="row">
-                <div class="col-xs-12 col-md-6">
-                  
-                </div>
-                <div class="col-xs-12 col-md-5" style="padding: 40px;">
-                  <img
-                    src="https://firebasestorage.googleapis.com/v0/b/portfolio-flask.appspot.com/o/profil.jpg?alt=media&token=72b30c0f-3083-4391-889c-f0beed5a901c"
-                    class="img-responsive" alt="" />
+                <div>
+                    <ul class="list-group">
+                      {% for interest in interests %}
+                      <li class="list-group-item list-unstyled">
+                        <h3 style="font-weight: 500;">{{ interest.titel }}</h3>
+                        {{ interest.omschrijving }}
+                      </li>
+                      {% endfor %}
+                    </ul>
                 </div>
               </div>
             </div>

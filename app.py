@@ -1,7 +1,46 @@
 import csv
 from flask import Flask, render_template, url_for, request, redirect
+import pandas as pd
+from sqlalchemy import create_engine, text
+import mysql.connector
 app = Flask(__name__)
 
+host='oege.ie.hva.nl'
+database='zmioulej'
+user='mioulej'
+password='xYr5RBnUxzIOVFYI'
+
+connection = mysql.connector.connect(
+    host=host,
+    database=database,
+    user=user,
+    password=password
+)
+
+# if connection.is_connected():
+#     db_info = connection.get_server_info()
+#     print("Connected to MySQL Server version", db_info)
+
+engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}/{database}")
+
+
+# df = pd.read_sql(text("SELECT * FROM Interests"), con=engine.connect())
+
+# print(df.head())
+@app.route('/personal-interests')
+@app.route('/personal-interests.html')
+def personal_interest():
+    try:
+        with engine.connect() as conn:
+            query = text("SELECT * FROM Interests")
+            result = conn.execute(query)
+            interests = [dict(row) for row in result.mappings()]  # Converts rows to dictionaries
+            print(interests)
+            return render_template('personal-interests.html', interests=interests)
+    except Exception as e:
+        print(f"Database error: {e}")
+        return render_template('index.html')
+        interests = []  # Return empty list in case of error
 
 @app.route('/')
 def homepage():
