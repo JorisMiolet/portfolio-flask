@@ -9,3 +9,5 @@ Werkzeug==0.16.0
 pandas
 sqlalchemy
 mysql-connector-python
+azure-keyvault-secrets
+azure-identity

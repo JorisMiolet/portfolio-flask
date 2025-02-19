@@ -3,12 +3,18 @@ from flask import Flask, render_template, url_for, request, redirect
 import pandas as pd
 from sqlalchemy import create_engine, text
 import mysql.connector
+from azure.keyvault.secrets import SecretClient
+from azure.identity import DefaultAzureCredential
+
 app = Flask(__name__)
+
+credential = DefaultAzureCredential()
+client = SecretClient(vault_url="https://portfoliojomikeyvault.vault.azure.net/", credential=credential)
 
 host='oege.ie.hva.nl'
 database='zmioulej'
 user='mioulej'
-password='xYr5RBnUxzIOVFYI'
+password = client.get_secret("database-password")
 
 connection = mysql.connector.connect(
     host=host,
@@ -17,11 +23,13 @@ connection = mysql.connector.connect(
     password=password
 )
 
+connectionString = client.get_secret("connection-string")
+
 # if connection.is_connected():
 #     db_info = connection.get_server_info()
 #     print("Connected to MySQL Server version", db_info)
 
-engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}/{database}")
+engine = create_engine(connectionString.value)
 
 
 # df = pd.read_sql(text("SELECT * FROM Interests"), con=engine.connect())
