@@ -20,7 +20,7 @@ connection = mysql.connector.connect(
     host=host,
     database=database,
     user=user,
-    password=password
+    password=password.value
 )
 
 connectionString = client.get_secret("connection-string")

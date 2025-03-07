@@ -1,0 +1,91 @@
+az login
+
+mySubscription="Azure for Students"
+az account set --subscription $mySubscription
+
+SubscriptionId=$(az account show --query id --output tsv)
+
+MyRgName='flask-portfolio-group'
+Location='westeurope'
+
+az group create \
+  --location $Location \
+  --resource-group $MyRgName
+
+MyKVName= portfolioJoMiKeyVault
+MySecretName=connection-string
+
+# scripts voor het verwijderen van de keyvault
+# az keyvault delete \
+#   --name $MyKVName
+
+# az keyvault purge \
+#   --name $MyKVName
+
+# create keyvault with rbac false to prevent permissions errors
+az keyvault create \
+    --name $MyKVName \
+    --resource-group $MyRgName \
+    --location $Location \
+    --enable-rbac-authorization false  
+
+#setting secret wouldn't be possible with rbac true within my current roles
+az keyvault secret set \
+  --vault-name $MyKVName\
+  --name $MySecretName \
+  --value "************" 
+
+APP_SERVICE_PLAN_NAME='JoMi-portfolio-plan'
+
+az appservice plan create \
+    --name $APP_SERVICE_PLAN_NAME \
+    --resource-group $MyRgName  \
+    --is-linux
+
+WEB_APP_NAME='flask-app-JoMi'
+
+az webapp create\
+    --name $WEB_APP_NAME \
+    --plan $APP_SERVICE_PLAN_NAME\
+    --runtime 'PYTHON:3.9' \
+    --resource-group $MyRgName \
+    --query 'defaultHostName' \
+    --output table
+
+# Before publishing we need to set the rightsbto access the keyvault
+# First we need assign an identity
+az webapp identity assign \
+    --name $WEB_APP_NAME \
+    --resource-group $MyRgName
+
+WEB_APP_OBJECT_ID=$(az webapp identity show --name $WEB_APP_NAME --resource-group $MyRgName --query principalId --output tsv)
+
+# Set a read role for the web app to the KeyFault
+
+az keyvault set-policy \
+    --name $MyKVName \
+    --object-id $WEB_APP_OBJECT_ID \
+    --resource-group $MyRgName \
+    --secret-permissions get
+
+# Set web config for the .env variable
+
+az webapp config appsettings set \
+    --name $WEB_APP_NAME \
+    --resource-group $MyRgName \
+    --settings KEY_VAULT_URL="https://portfoliojomikeyvault.vault.azure.net/" 
+    
+
+az webapp config appsettings set \
+    --name $WEB_APP_NAME \
+    --resource-group $MyRgName \
+    --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true               
+
+# publish app
+az webapp up\
+    --name $WEB_APP_NAME \
+    --plan $APP_SERVICE_PLAN_NAME\
+    --runtime 'PYTHON:3.11' \
+    --resource-group  $MyRgName \
+    --query 'defaultHostName' \
+    --output table
